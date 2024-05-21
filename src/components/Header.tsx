@@ -7,7 +7,9 @@ interface HeaderProps {
 }
 
 const HeaderBar = styled(AppBar)({
-  backgroundColor: "#213356",
+  // backgroundColor: "#ecd800",
+  backgroundColor: "#FFD700", //#FFD700
+  color: "#000",
 });
 
 const Header: React.FC<HeaderProps> = ({ openModal }) => {
@@ -15,6 +17,7 @@ const Header: React.FC<HeaderProps> = ({ openModal }) => {
     <HeaderBar position="static">
       <Toolbar>
         <Avatar src="/assets/Bee.jpg" sx={{ marginRight: 2 }} />
+
         {/* 画像をroundedに表示 */}
         <Typography variant="h6" style={{ flexGrow: 1 }}>
           Budget Buddy

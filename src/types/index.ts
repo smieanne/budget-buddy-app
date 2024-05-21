@@ -1,12 +1,19 @@
 export type TransactionType = "income" | "expense";
-export type IncomeCategory = "給与" | "副収入" | "お小遣い";
+export type IncomeCategory = "給与" | "副収入" | "その他";
 export type ExpenseCategory =
+  | "家賃"
+  | "光熱費"
+  | "通信費"
+  | "サブスク"
   | "食費"
-  | "日用品"
-  | "住居費"
+  | "日用品費"
+  | "交通費"
   | "交際費"
+  | "医療費"
+  | "美容"
   | "娯楽"
-  | "交通費";
+  | "被服費"
+  | "その他";
 
 export interface Transaction {
   id: string;

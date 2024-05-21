@@ -1,15 +1,32 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Box, Button, Container, Grid } from "@mui/material";
 import Header from "./components/Header";
 import ExpenseTable from "./components/ExpenseTable";
-import AddExpenseModal from "./components/AddExpenseModal";
+import AddExpenseModal from "./components/AddTransactionModal";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-
 import MonthSelrctor from "./components/MonthSelector";
 import TransactionTable from "./components/TransactionTable";
+import AddTransactionModal from "./components/AddTransactionModal";
+import { format } from "date-fns";
+import { Transaction } from "./types/index";
+import { collection, getDocs, query } from "firebase/firestore";
+import { db } from "./firebaseConfig";
+import { formatMonth } from "./utils/formatting";
 
 const App: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+
+  //FireStoreのエラーかどうかを判定する型ガード
+  function isFireStoreError(
+    err: unknown
+  ): err is { code: string; message: string } {
+    return (
+      typeof err === "object" &&
+      err !== null &&
+      "code" in err &&
+      "message" in err
+    );
+  }
 
   const openModal = () => {
     setIsModalOpen(true);
@@ -18,7 +35,47 @@ const App: React.FC = () => {
   const closeModal = () => {
     setIsModalOpen(false);
   };
+
+  const [taransactions, setTransactions] = useState<Transaction[]>([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const today = format(currentMonth, "yyyy-MM");
+  //日付のフォーマット
+
+  const [currentDay, setCurrentDay] = useState(today);
+
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "Transactions"));
+        console.log(querySnapshot);
+
+        const transactionsData = querySnapshot.docs.map((doc) => {
+          // console.log(doc.id, " => ", doc.data());
+          return {
+            ...doc.data(),
+            id: doc.id,
+          } as Transaction;
+        });
+
+        console.log(transactionsData);
+        setTransactions(transactionsData);
+      } catch (err) {
+        if (isFireStoreError(err)) {
+          console.log("FireStoreのエラーは:", err);
+          console.log(err.message);
+          console.log(err.code);
+        } else {
+          console.log("一般的なエラーは:", err);
+        }
+      }
+    };
+    fetchTransactions();
+  }, []);
+
+  const monthlyTransactions = taransactions.filter((transaction) => {
+    return transaction.date.startsWith(formatMonth(currentMonth));
+  });
+  console.log(monthlyTransactions);
 
   return (
     <div>
@@ -26,13 +83,17 @@ const App: React.FC = () => {
       <Box
         sx={{
           display: { md: "flex" },
-          bgcolor: "#e4e7ec",
+          bgcolor: "#fffdf1", //#fbf9e1　　黄色#FFF8DC
           minHeight: "100vh",
         }}
       >
         <Container>
           <ExpenseTable />
-          <AddExpenseModal open={isModalOpen} onClose={closeModal} />
+          <AddTransactionModal
+            open={isModalOpen}
+            onClose={closeModal}
+            currentDay={currentDay}
+          />
 
           <Grid item xs={4}>
             <MonthSelrctor />
@@ -43,15 +104,18 @@ const App: React.FC = () => {
             size="large"
             startIcon={<AddCircleOutlineIcon />}
             sx={{
-              backgroundColor: "#213356",
-              "&amp;:hover": { backgroundColor: "#0a1d42" },
-              mb: 2,
+              // backgroundColor: "#213356",
+              backgroundColor: "#FFD700",
+              color: "#000",
+              "&amp;:hover": { backgroundColor: "#FFD700" },
+              mb: 1,
             }}
             onClick={openModal}
           >
             新規登録
           </Button>
 
+          {/* <TransactionTable monthlyTransactions={monthlyTransactions} /> */}
           <TransactionTable />
         </Container>
       </Box>

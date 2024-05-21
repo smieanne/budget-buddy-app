@@ -17,10 +17,19 @@ const MonthSelrctor = () => {
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          margin: "20px 0",
+          margin: "10px 0",
         }}
       >
-        <Button color={"primary"} variant="contained">
+        <Button
+          variant="contained"
+          sx={{
+            backgroundColor: "#3e3d37",
+            // color: "black",
+            "&amp;:hover": {
+              backgroundColor: "#25241d", // ホバー時の背景色
+            },
+          }}
+        >
           先月
         </Button>
         <DatePicker
@@ -34,7 +43,16 @@ const MonthSelrctor = () => {
             },
           }}
         />
-        <Button color={"primary"} variant="contained">
+        <Button
+          variant="contained"
+          sx={{
+            backgroundColor: "#3e3d37", //#f0b800
+            // color: "black",
+            "&amp;:hover": {
+              backgroundColor: "#25241d", // ホバー時の背景色
+            },
+          }}
+        >
           次月
         </Button>
       </Box>
