@@ -12,6 +12,7 @@ import { Transaction } from "./types/index";
 import { addDoc, collection, getDocs, query } from "firebase/firestore";
 import { db } from "./firebaseConfig";
 import { formatMonth } from "./utils/formatting";
+import { Schema } from "./validations/schema";
 
 const App: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -77,10 +78,18 @@ const App: React.FC = () => {
     return transaction.date.startsWith(formatMonth(currentMonth));
   });
 
-  const handleSaveTransaction = async (transaction: any) => {
+  //取引を保存する処理
+  const handleSaveTransaction = async (transaction: Schema) => {
     try {
       //firestoreにデータを保存
       const docRef = await addDoc(collection(db, "Transactions"), transaction);
+
+      const newTransaction = {
+        id: docRef.id,
+        ...transaction,
+      } as Transaction;
+      console.log(newTransaction);
+      setTransactions([...taransactions, newTransaction]);
     } catch (err) {
       if (isFireStoreError(err)) {
         console.log("FireStoreのエラーは:", err);
@@ -117,6 +126,7 @@ const App: React.FC = () => {
             <MonthSelector
               currentMonth={currentMonth}
               setCurrentMonth={setCurrentMonth}
+              onSaveTransaction={handleSaveTransaction}
             />
           </Grid>
 

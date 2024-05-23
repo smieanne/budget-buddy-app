@@ -5,10 +5,12 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFnsV3";
 import React from "react";
 import { ja } from "date-fns/locale/ja";
 import { addMonths, set } from "date-fns";
+import { Schema } from "../validations/schema";
 
 interface MonthSelectorProps {
   currentMonth: Date;
   setCurrentMonth: React.Dispatch<React.SetStateAction<Date>>;
+  onSaveTransaction: (transaction: Schema) => Promise<void>;
 }
 
 const MonthSelector = ({

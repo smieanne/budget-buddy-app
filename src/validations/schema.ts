@@ -6,7 +6,7 @@ export const transactionSchema = z.object({
   amount: z.number().min(1, { message: "金額は1円以上必須です" }),
   content: z
     .string()
-    .min(0, { message: "任意で入力" })
+    .min(1, { message: "任意で入力" })
     .max(50, { message: "内容は50文字以内にしてください。" }),
 
   category: z

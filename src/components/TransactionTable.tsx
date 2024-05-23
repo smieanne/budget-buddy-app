@@ -71,30 +71,9 @@ const rows = [
   createData("2024/5/1", "家賃", 1000, "食材買い出し"),
   createData("2024/5/1", "食費", 1000, "食材買い出し"),
   createData("2024/5/1", "美容", 1000, "食材買い出し"),
-  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
 ];
 interface ReportProps {
+  monthlyTransactions: Schema[];
   currentMonth: Date;
   setCurrentMonth: React.Dispatch<React.SetStateAction<Date>>;
   onSaveTransaction: (transaction: Schema) => Promise<void>;
@@ -224,7 +203,7 @@ export default function TransactionTable({
       <TablePagination
         rowsPerPageOptions={[10, 25, 100]}
         component="div"
-        count={rows.length}
+        count={monthlyTransactions.length}
         rowsPerPage={rowsPerPage}
         page={page}
         onPageChange={handleChangePage}

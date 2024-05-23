@@ -15,8 +15,8 @@ import {
   FormHelperText,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close"; // 閉じるボタン用のアイコン
-import { Controller, useForm } from "react-hook-form";
-import { ExpenseCategory, IncomeCategory } from "../types";
+import { Controller, SubmitHandler, useForm } from "react-hook-form";
+import { ExpenseCategory, IncomeCategory, Transaction } from "../types";
 import FastfoodIcon from "@mui/icons-material/Fastfood";
 import { addDoc, collection } from "firebase/firestore";
 import { db } from "../firebaseConfig";
@@ -30,7 +30,10 @@ interface AddTransactionModalProps {
   open: boolean;
   onClose: () => void;
   currentDay: string;
-  onSaveTransaction: (data: any) => void;
+
+  onSaveTransaction: (data: Schema) => Promise<void>;
+
+  // (transaction: Schema) => Promise<void>;
 }
 
 type IncomeExpense = "income" | "expense";
@@ -41,24 +44,6 @@ const AddExpenseModal: React.FC<AddTransactionModalProps> = ({
   currentDay,
   onSaveTransaction,
 }) => {
-  const {
-    control,
-    setValue,
-    watch,
-    formState: { errors },
-    handleSubmit,
-  } = useForm<Schema>({
-    defaultValues: {
-      type: "expense",
-      date: currentDay, //後で修正
-      amount: 0,
-      category: "",
-      content: "test",
-    },
-    resolver: zodResolver(transactionSchema),
-  });
-  console.log(errors);
-
   const [date, setDate] = useState<string>("");
   const [category, setCategory] = useState<string>("");
   const [amount, setAmount] = useState<number | string>("");
@@ -82,22 +67,7 @@ const AddExpenseModal: React.FC<AddTransactionModalProps> = ({
 
   const incomeExpenseToggle = (type: IncomeExpense) => {
     setValue("type", type);
-  };
-
-  //収支タイプを監視
-  const currentType = watch("type");
-  // console.log(currentType);
-
-  useEffect(() => {
-    const newCategories =
-      currentType === "expense" ? expenseCategories : incomeCategories;
-    // console.log(newCategories);
-    setCategories(newCategories);
-  }, [currentType]);
-
-  //送信処理
-  const onSubmit = (data: any) => {
-    onSaveTransaction(data);
+    setValue("category", "");
   };
 
   type IncomeExpense = "income" | "expense";
@@ -129,12 +99,52 @@ const AddExpenseModal: React.FC<AddTransactionModalProps> = ({
   ];
 
   const [categories, setCategories] = useState(expenseCategories);
+  const {
+    control,
+    setValue,
+    watch,
+    formState: { errors },
+    handleSubmit,
+  } = useForm<Schema>({
+    defaultValues: {
+      type: "expense",
+      date: currentDay, //後で修正
+      amount: 0,
+      category: "",
+      content: "test",
+    },
+    resolver: zodResolver(transactionSchema),
+  });
+  console.log(errors);
+
+  //収支タイプを監視
+  const currentType = watch("type");
+  console.log(currentType);
+
+  useEffect(() => {
+    const newCategories =
+      currentType === "expense" ? expenseCategories : incomeCategories;
+    console.log(newCategories);
+    setCategories(newCategories);
+  }, [currentType]);
+
+  //送信処理
+  const onSubmit: SubmitHandler<Schema> = (data) => {
+    console.log(data);
+    onSaveTransaction(data);
+  };
 
   return (
-    <Modal open={open} onClose={onClose} onSubmit={handleSubmit(onSubmit)}>
+    <Modal open={open} onClose={onClose}>
       <Box sx={{ ...modalStyle }}>
         {/* 入力エリアヘッダー */}
-        <Box display={"flex"} justifyContent={"space-between"} mb={2}>
+        <Box
+          display={"flex"}
+          justifyContent={"space-between"}
+          mb={2}
+          component="form" //修正: componentをformに変更
+          onSubmit={handleSubmit(onSubmit)}
+        >
           <Typography variant="h6">新規登録</Typography>
           {/* 閉じるボタン */}
           <IconButton
@@ -180,12 +190,21 @@ const AddExpenseModal: React.FC<AddTransactionModalProps> = ({
               label="日付"
               type="date"
               fullWidth
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
               InputLabelProps={{ shrink: true }}
               margin="normal"
               error={!!errors.date}
               helperText={errors.date?.message}
+
+              // {...field}
+              // label="日付"
+              // type="date"
+              // fullWidth
+              // value={date}
+              // onChange={(e) => setDate(e.target.value)}
+              // InputLabelProps={{ shrink: true }}
+              // margin="normal"
+              // error={!!errors.date}
+              // helperText={errors.date?.message}
             />
           )}
         />
@@ -252,8 +271,13 @@ const AddExpenseModal: React.FC<AddTransactionModalProps> = ({
         <Button
           variant="contained"
           color={currentType === "income" ? "primary" : "error"}
+          type="submit" //修正: type="submit" を追加
           onClick={handleAddTransaction}
         >
+          {/* variant="contained"
+          color={currentType === "income" ? "primary" : "error"}
+         onClick={handleAddTransaction}
+         > */}
           追加
         </Button>
       </Box>
