@@ -4,12 +4,12 @@ import Header from "./components/Header";
 import ExpenseTable from "./components/ExpenseTable";
 import AddExpenseModal from "./components/AddTransactionModal";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-import MonthSelrctor from "./components/MonthSelector";
+import MonthSelector from "./components/MonthSelector";
 import TransactionTable from "./components/TransactionTable";
 import AddTransactionModal from "./components/AddTransactionModal";
 import { format } from "date-fns";
 import { Transaction } from "./types/index";
-import { collection, getDocs, query } from "firebase/firestore";
+import { addDoc, collection, getDocs, query } from "firebase/firestore";
 import { db } from "./firebaseConfig";
 import { formatMonth } from "./utils/formatting";
 
@@ -47,7 +47,7 @@ const App: React.FC = () => {
     const fetchTransactions = async () => {
       try {
         const querySnapshot = await getDocs(collection(db, "Transactions"));
-        console.log(querySnapshot);
+        // console.log(querySnapshot);
 
         const transactionsData = querySnapshot.docs.map((doc) => {
           // console.log(doc.id, " => ", doc.data());
@@ -57,7 +57,7 @@ const App: React.FC = () => {
           } as Transaction;
         });
 
-        console.log(transactionsData);
+        // console.log(transactionsData);
         setTransactions(transactionsData);
       } catch (err) {
         if (isFireStoreError(err)) {
@@ -72,10 +72,27 @@ const App: React.FC = () => {
     fetchTransactions();
   }, []);
 
+  //ひと月分のデータのみ取得
   const monthlyTransactions = taransactions.filter((transaction) => {
     return transaction.date.startsWith(formatMonth(currentMonth));
   });
-  console.log(monthlyTransactions);
+
+  const handleSaveTransaction = async (transaction: any) => {
+    try {
+      //firestoreにデータを保存
+      const docRef = await addDoc(collection(db, "Transactions"), transaction);
+    } catch (err) {
+      if (isFireStoreError(err)) {
+        console.log("FireStoreのエラーは:", err);
+        console.log(err.message);
+        console.log(err.code);
+      } else {
+        console.log("一般的なエラーは:", err);
+      }
+    }
+  };
+
+  // console.log(monthlyTransactions);
 
   return (
     <div>
@@ -93,10 +110,14 @@ const App: React.FC = () => {
             open={isModalOpen}
             onClose={closeModal}
             currentDay={currentDay}
+            onSaveTransaction={handleSaveTransaction}
           />
 
           <Grid item xs={4}>
-            <MonthSelrctor />
+            <MonthSelector
+              currentMonth={currentMonth}
+              setCurrentMonth={setCurrentMonth}
+            />
           </Grid>
 
           <Button
@@ -115,8 +136,12 @@ const App: React.FC = () => {
             新規登録
           </Button>
 
-          {/* <TransactionTable monthlyTransactions={monthlyTransactions} /> */}
-          <TransactionTable />
+          <TransactionTable
+            monthlyTransactions={monthlyTransactions}
+            setCurrentMonth={setCurrentMonth}
+            onSaveTransaction={handleSaveTransaction}
+          />
+          {/* <TransactionTable /> */}
         </Container>
       </Box>
     </div>

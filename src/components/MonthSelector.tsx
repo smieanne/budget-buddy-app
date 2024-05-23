@@ -4,8 +4,33 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFnsV3";
 import React from "react";
 import { ja } from "date-fns/locale/ja";
+import { addMonths, set } from "date-fns";
 
-const MonthSelrctor = () => {
+interface MonthSelectorProps {
+  currentMonth: Date;
+  setCurrentMonth: React.Dispatch<React.SetStateAction<Date>>;
+}
+
+const MonthSelector = ({
+  currentMonth,
+  setCurrentMonth,
+}: MonthSelectorProps) => {
+  const handleDateChange = (newDate: Date | null) => {
+    if (newDate) {
+      setCurrentMonth(newDate);
+    }
+  };
+  //先月ボタンを押した時の処理
+  const handlePreviousMonth = () => {
+    const previousMonth = addMonths(currentMonth, -1);
+    setCurrentMonth(previousMonth);
+  };
+
+  //次月ボタンを押した時の処理
+  const handleNextMonth = () => {
+    const nextMonth = addMonths(currentMonth, 1);
+    setCurrentMonth(nextMonth);
+  };
   return (
     <LocalizationProvider
       dateAdapter={AdapterDateFns}
@@ -21,6 +46,7 @@ const MonthSelrctor = () => {
         }}
       >
         <Button
+          onClick={handlePreviousMonth}
           variant="contained"
           sx={{
             backgroundColor: "#3e3d37",
@@ -33,6 +59,8 @@ const MonthSelrctor = () => {
           先月
         </Button>
         <DatePicker
+          onChange={handleDateChange}
+          value={currentMonth}
           label="年月を選択"
           sx={{ mx: 2, background: "white" }}
           views={["year", "month"]}
@@ -44,6 +72,7 @@ const MonthSelrctor = () => {
           }}
         />
         <Button
+          onClick={handleNextMonth}
           variant="contained"
           sx={{
             backgroundColor: "#3e3d37", //#f0b800
@@ -60,4 +89,4 @@ const MonthSelrctor = () => {
   );
 };
 
-export default MonthSelrctor;
+export default MonthSelector;

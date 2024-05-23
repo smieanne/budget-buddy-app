@@ -8,6 +8,11 @@ import TableHead from "@mui/material/TableHead";
 import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
 import { WidthFull } from "@mui/icons-material";
+import { Grid, Typography } from "@mui/material";
+import { formatCurrency } from "../utils/formatting";
+import { financeCalculations } from "../utils/financeCalculations";
+import { blue, green, red, grey } from "@mui/material/colors";
+import { Schema } from "zod";
 
 interface Column {
   id: "name" | "code" | "population" | "size";
@@ -63,34 +68,43 @@ function createData(
 }
 
 const rows = [
+  createData("2024/5/1", "家賃", 1000, "食材買い出し"),
   createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  createData("2024/5/1", "食費", 1000, "食材買い出し"),
-  createData("2024/5/1", "食費", 1000, "食材買い出し"),
+  createData("2024/5/1", "美容", 1000, "食材買い出し"),
+  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
+  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
+  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
+  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
+  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
+  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
+  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
+  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
+  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
+  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
+  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
+  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
+  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
+  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
+  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
+  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
+  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
+  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
+  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
+  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
+  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
+  //   createData("2024/5/1", "食費", 1000, "食材買い出し"),
 ];
+interface ReportProps {
+  currentMonth: Date;
+  setCurrentMonth: React.Dispatch<React.SetStateAction<Date>>;
+  onSaveTransaction: (transaction: Schema) => Promise<void>;
+}
 
-export default function ColumnGroupingTable() {
+export default function TransactionTable({
+  monthlyTransactions,
+  setCurrentMonth,
+  onSaveTransaction,
+}: any) {
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
 
@@ -105,20 +119,67 @@ export default function ColumnGroupingTable() {
     setPage(0);
   };
 
+  interface FinacialItemProps {
+    title: string;
+    value: number;
+    color: string;
+  }
+  function FinancialItem({ title, value, color }: FinacialItemProps) {
+    return (
+      // <Grid item xs={4} textAlign={"center"}>
+      //   <Typography variant="subtitle1" component={"div"}>
+      //     {title}{" "}
+      //   </Typography>
+
+      <Typography
+        component={"span"}
+        fontWeight={"fontWeightBold"}
+        sx={{
+          color: color,
+          fontSize: { xs: "0.8rem", sm: "1rem", md: "1.2rem" },
+          wordBreak: "break-word",
+        }}
+      >
+        {title} ¥{formatCurrency(value)}
+      </Typography>
+      // </Grid>
+    );
+  }
+
+  const { income, expense, balance } = financeCalculations(monthlyTransactions);
+
   return (
     <Paper sx={{ width: "100%" }}>
       <TableContainer sx={{ maxHeight: 440 }}>
         <Table stickyHeader aria-label="sticky table">
           <TableHead>
+            {/*収支表示エリア */}
+            {/* <Grid
+              container
+              sx={{ borderBottom: "1px solid rgba(224, 224,224,1)" }}
+            ></Grid> */}
+
             <TableRow>
-              <TableCell align="center" colSpan={1} sx={{ color: "green" }}>
-                収入：300,000
-              </TableCell>
-              <TableCell align="center" colSpan={2} sx={{ color: "red" }}>
-                支出：100,000
+              <TableCell align="center" colSpan={1}>
+                <FinancialItem
+                  title={"収入"}
+                  value={income}
+                  color={green[800]}
+                />
               </TableCell>
               <TableCell align="center" colSpan={2}>
-                残高：200,000
+                <FinancialItem
+                  title={"支出"}
+                  value={expense}
+                  color={red[800]}
+                />
+              </TableCell>
+              <TableCell align="center" colSpan={2}>
+                <FinancialItem
+                  title={"残高"}
+                  value={balance}
+                  color={grey[900]}
+                />
               </TableCell>
             </TableRow>
             <TableRow>
@@ -126,7 +187,12 @@ export default function ColumnGroupingTable() {
                 <TableCell
                   key={column.id}
                   align={column.align}
-                  style={{ top: 57, minWidth: column.minWidth }}
+                  style={{
+                    top: 57,
+                    minWidth: column.minWidth,
+                    // background: "#dedede",
+                    fontWeight: "bold",
+                  }}
                 >
                   {column.label}
                 </TableCell>
