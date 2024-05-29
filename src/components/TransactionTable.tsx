@@ -31,6 +31,7 @@ import {
   transactionSchema,
   Schema,
 } from "../validations/schema"; // validationsファイルからインポート
+import DeleteIcon from "@mui/icons-material/Delete";
 
 interface TransactionTableProps {
   monthlyTransactions: Transaction[];
@@ -370,10 +371,10 @@ export default function TransactionTable({
                   margin="normal"
                   error={!!errors.amount}
                   helperText={errors.amount?.message}
+                  value={field.value === 0 ? "" : field.value}
                   onChange={(e) => {
-                    const value = e.target.value;
-                    const numberValue = value === "" ? "" : Number(value);
-                    field.onChange(numberValue);
+                    const newValue = parseInt(e.target.value, 10) || 0;
+                    field.onChange(newValue);
                   }}
                 />
               )}
@@ -406,12 +407,14 @@ export default function TransactionTable({
             </Button>
           </form>
           <Button
+            type="submit"
             onClick={handleDelete}
             variant="outlined"
             color="error"
             sx={{ mt: 2 }}
             fullWidth
           >
+            <DeleteIcon />
             削除
           </Button>
         </Box>
