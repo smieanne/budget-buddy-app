@@ -16,24 +16,15 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close"; // 閉じるボタン用のアイコン
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import { ExpenseCategory, IncomeCategory, Transaction } from "../types";
+import { ExpenseCategory, IncomeCategory } from "../types";
 import FastfoodIcon from "@mui/icons-material/Fastfood";
-import { addDoc, collection } from "firebase/firestore";
-import { db } from "../firebaseConfig";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Schema, transactionSchema } from "../validations/schema";
-
-// import { collection, addDoc } from "firebase/firestore";
-// import { db } from "../firebaseConfig";
 
 interface AddTransactionModalProps {
   open: boolean;
   onClose: () => void;
-  currentDay: string;
-
   onSaveTransaction: (data: Schema) => Promise<void>;
-
-  // (transaction: Schema) => Promise<void>;
 }
 
 type IncomeExpense = "income" | "expense";
@@ -41,36 +32,19 @@ type IncomeExpense = "income" | "expense";
 const AddExpenseModal: React.FC<AddTransactionModalProps> = ({
   open,
   onClose,
-  currentDay,
   onSaveTransaction,
 }) => {
-  const [date, setDate] = useState<string>("");
+  const getCurrentDay = () => new Date().toISOString().split("T")[0];
+
   const [category, setCategory] = useState<string>("");
   const [amount, setAmount] = useState<number | string>("");
   const [description, setDescription] = useState<string>("");
-
-  // const currentDate = new Date().toISOString().split("T")[0];
-
-  const handleAddTransaction = async () => {
-    await addDoc(collection(db, "Transactions"), {
-      date,
-      category,
-      amount: Number(amount),
-      description,
-    });
-    setDate("");
-    setCategory("");
-    setAmount("");
-    setDescription("");
-    onClose();
-  };
 
   const incomeExpenseToggle = (type: IncomeExpense) => {
     setValue("type", type);
     setValue("category", "");
   };
 
-  type IncomeExpense = "income" | "expense";
   interface CategoryItem {
     label: IncomeCategory | ExpenseCategory;
     icon: JSX.Element;
@@ -105,181 +79,174 @@ const AddExpenseModal: React.FC<AddTransactionModalProps> = ({
     watch,
     formState: { errors },
     handleSubmit,
+    reset,
   } = useForm<Schema>({
     defaultValues: {
       type: "expense",
-      date: currentDay, //後で修正
+      date: getCurrentDay(),
       amount: 0,
       category: "",
-      content: "test",
+      content: "",
     },
     resolver: zodResolver(transactionSchema),
   });
-  console.log(errors);
 
-  //収支タイプを監視
+  useEffect(() => {
+    if (open) {
+      reset({
+        type: "expense",
+        date: getCurrentDay(),
+        amount: 0,
+        category: "",
+        content: "",
+      });
+    }
+  }, [open, reset]);
+
   const currentType = watch("type");
-  console.log(currentType);
 
   useEffect(() => {
     const newCategories =
       currentType === "expense" ? expenseCategories : incomeCategories;
-    console.log(newCategories);
     setCategories(newCategories);
   }, [currentType]);
 
-  //送信処理
-  const onSubmit: SubmitHandler<Schema> = (data) => {
-    console.log(data);
-    onSaveTransaction(data);
+  const onSubmit: SubmitHandler<Schema> = async (data) => {
+    await onSaveTransaction(data);
+    onClose();
   };
 
   return (
     <Modal open={open} onClose={onClose}>
       <Box sx={{ ...modalStyle }}>
         {/* 入力エリアヘッダー */}
-        <Box
-          display={"flex"}
-          justifyContent={"space-between"}
-          mb={2}
-          component="form" //修正: componentをformに変更
-          onSubmit={handleSubmit(onSubmit)}
-        >
+        <Box display={"flex"} justifyContent={"space-between"} mb={2}>
           <Typography variant="h6">新規登録</Typography>
           {/* 閉じるボタン */}
-          <IconButton
-            onClick={onClose}
-            // sx={{
-            //   color: (theme) => theme.palette.grey[500],
-            // }}
-          >
+          <IconButton onClick={onClose}>
             <CloseIcon />
           </IconButton>
         </Box>
         {/* フォーム要素 */}
-        <Controller
-          name="type"
-          control={control}
-          render={({ field }) => (
-            <ButtonGroup fullWidth>
-              <Button
-                variant={field.value === "expense" ? "contained" : "outlined"}
-                color="error"
-                onClick={() => incomeExpenseToggle("expense")}
-              >
-                支出
-              </Button>
-              <Button
-                onClick={() => incomeExpenseToggle("income")}
-                color="primary"
-                variant={field.value === "income" ? "contained" : "outlined"}
-              >
-                収入
-              </Button>
-            </ButtonGroup>
-          )}
-        />
-
-        {/* 日付 */}
-        <Controller
-          name="date"
-          control={control}
-          render={(field) => (
-            <TextField
-              {...field}
-              label="日付"
-              type="date"
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-              margin="normal"
-              error={!!errors.date}
-              helperText={errors.date?.message}
-
-              // {...field}
-              // label="日付"
-              // type="date"
-              // fullWidth
-              // value={date}
-              // onChange={(e) => setDate(e.target.value)}
-              // InputLabelProps={{ shrink: true }}
-              // margin="normal"
-              // error={!!errors.date}
-              // helperText={errors.date?.message}
-            />
-          )}
-        />
-        {/* カテゴリ */}
-        <Controller
-          name="category"
-          control={control}
-          render={({ field }) => (
-            <FormControl fullWidth>
-              <InputLabel id="category-select-label">カテゴリ</InputLabel>
-              <Select
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <Controller
+            name="type"
+            control={control}
+            render={({ field }) => (
+              <ButtonGroup fullWidth>
+                <Button
+                  variant={field.value === "expense" ? "contained" : "outlined"}
+                  color="error"
+                  onClick={() => incomeExpenseToggle("expense")}
+                >
+                  支出
+                </Button>
+                <Button
+                  onClick={() => incomeExpenseToggle("income")}
+                  color="primary"
+                  variant={field.value === "income" ? "contained" : "outlined"}
+                >
+                  収入
+                </Button>
+              </ButtonGroup>
+            )}
+          />
+          {/* 日付 */}
+          <Controller
+            name="date"
+            control={control}
+            render={({ field }) => (
+              <TextField
                 {...field}
-                labelId="category-select-label"
-                id="category-select"
-                label="カテゴリ"
-              >
-                {categories.map((category, index) => (
-                  <MenuItem value={category.label} key={index}>
-                    <ListItemIcon>{category.icon}</ListItemIcon>
-                    {category.label}
-                  </MenuItem>
-                ))}
-              </Select>
-              <FormHelperText>{errors.category?.message}</FormHelperText>
-            </FormControl>
-          )}
-        />
-        {/* 金額 */}
-        <Controller
-          name="amount"
-          control={control}
-          render={({ field }) => (
-            <TextField
-              error={!!errors.amount}
-              helperText={errors.amount?.message}
-              {...field}
-              label="金額"
-              type="number"
-              fullWidth
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              margin="normal"
-            />
-          )}
-        />
-        {/* 内容 */}
-        <Controller
-          name="content"
-          control={control}
-          render={({ field }) => (
-            <TextField
-              error={!!errors.content}
-              helperText={errors.content?.message}
-              {...field}
-              label="内容"
-              fullWidth
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              margin="normal"
-            />
-          )}
-        />
+                label="日付"
+                type="date"
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+                margin="normal"
+                error={!!errors.date}
+                helperText={errors.date?.message}
+              />
+            )}
+          />
+          {/* カテゴリ */}
+          <Controller
+            name="category"
+            control={control}
+            render={({ field }) => (
+              <FormControl fullWidth margin="normal">
+                <InputLabel id="category-select-label">カテゴリ</InputLabel>
+                <Select
+                  {...field}
+                  labelId="category-select-label"
+                  id="category-select"
+                  label="カテゴリ"
+                  error={!!errors.category}
+                >
+                  {categories.map((category, index) => (
+                    <MenuItem value={category.label} key={index}>
+                      <ListItemIcon>{category.icon}</ListItemIcon>
+                      {category.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+                <FormHelperText>{errors.category?.message}</FormHelperText>
+              </FormControl>
+            )}
+          />
+          {/* 金額 */}
+          <Controller
+            name="amount"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="金額"
+                type="number"
+                fullWidth
+                margin="normal"
+                error={!!errors.amount}
+                helperText={errors.amount?.message}
+                // {...field}
+                value={field.value === 0 ? "" : field.value}
+                onChange={(e) => {
+                  const newValue = parseInt(e.target.value, 10) || 0;
+                  field.onChange(newValue);
+                }}
+                // label="金額"
+                // type="number"
 
-        <Button
-          variant="contained"
-          color={currentType === "income" ? "primary" : "error"}
-          type="submit" //修正: type="submit" を追加
-          onClick={handleAddTransaction}
-        >
-          {/* variant="contained"
-          color={currentType === "income" ? "primary" : "error"}
-         onClick={handleAddTransaction}
-         > */}
-          追加
-        </Button>
+                // onChange={(e) => {
+                //   const value = e.target.value;
+                //   const numberValue = value === "0" ? "" : Number(value);
+                //   field.onChange(numberValue);
+                // }}
+              />
+            )}
+          />
+          {/* 内容 */}
+          <Controller
+            name="content"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="内容"
+                fullWidth
+                margin="normal"
+                error={!!errors.content}
+                helperText={errors.content?.message}
+              />
+            )}
+          />
+          <Button
+            variant="contained"
+            color={currentType === "income" ? "primary" : "error"}
+            type="submit"
+            fullWidth
+          >
+            追加
+          </Button>
+        </form>
       </Box>
     </Modal>
   );

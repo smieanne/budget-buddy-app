@@ -9,7 +9,16 @@ import TransactionTable from "./components/TransactionTable";
 import AddTransactionModal from "./components/AddTransactionModal";
 import { format } from "date-fns";
 import { Transaction } from "./types/index";
-import { addDoc, collection, getDocs, query } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  updateDoc,
+} from "firebase/firestore";
 import { db } from "./firebaseConfig";
 import { formatMonth } from "./utils/formatting";
 import { Schema } from "./validations/schema";
@@ -101,7 +110,70 @@ const App: React.FC = () => {
     }
   };
 
+  //削除処理
+  const handleDeleteTransaction = async (
+    transactionIds: string | readonly string[]
+  ) => {
+    try {
+      const idsToDelete = Array.isArray(transactionIds)
+        ? transactionIds
+        : [transactionIds];
+
+      for (const id of idsToDelete) {
+        //firestoreのデータ削除
+        await deleteDoc(doc(db, "Transactions", id));
+      }
+      //複数の取引を削除可能
+      // const filterdTransactions = transactionSchema.filter(
+      //   (Transaction) => !idsToDelete.includes(Transaction.id)
+      // );
+      // setTransactions(filterdTransactions);
+    } catch (err) {
+      if (isFireStoreError(err)) {
+        console.error("firestoreのエラーは：", err);
+      } else {
+        console.error("一般的なエラーは:", err);
+      }
+    }
+  };
+
+  //更新処理
+  const dateTransaction = async (
+    transaction: Schema,
+    transactionId: string
+  ) => {
+    try {
+      //firestore更新処理
+      const docRef = doc(db, "Transactions", transactionId);
+
+      await updateDoc(docRef, transaction);
+      //フロント更新
+      const updateTransactions = taransactions.map((t) =>
+        t.id === transactionId ? { ...t, ...transaction } : t
+      ) as Transaction[];
+      setTransactions(updateTransactions);
+    } catch (err) {
+      if (isFireStoreError(err)) {
+        console.error("firestoreのエラーは：", err);
+      } else {
+        console.error("一般的なエラーは:", err);
+      }
+    }
+  };
+
   // console.log(monthlyTransactions);
+
+  //追加
+  const onSaveTransaction = async (
+    transaction: Schema
+  ): Promise<Transaction> => {
+    const docRef = await addDoc(collection(db, "Transactions"), transaction);
+    const newTransactionDoc = await getDoc(docRef);
+    return {
+      id: newTransactionDoc.id,
+      ...newTransactionDoc.data(),
+    } as Transaction;
+  };
 
   return (
     <div>
@@ -118,7 +190,7 @@ const App: React.FC = () => {
           <AddTransactionModal
             open={isModalOpen}
             onClose={closeModal}
-            currentDay={currentDay}
+            // currentDay={currentDay}
             onSaveTransaction={handleSaveTransaction}
           />
 
@@ -150,6 +222,8 @@ const App: React.FC = () => {
             monthlyTransactions={monthlyTransactions}
             setCurrentMonth={setCurrentMonth}
             onSaveTransaction={handleSaveTransaction}
+            onDeleteTransaction={handleDeleteTransaction}
+            // onUpdateTransaction={handleUpdateTransaction}
           />
           {/* <TransactionTable /> */}
         </Container>
@@ -159,28 +233,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-
-// import React from "react";
-
-// import "./App.css";
-// import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
-// import Home from "./pages/Home";
-// import NoMatch from "./pages/NoMatch";
-// import AppLayout from "./components/layout/AppLayout";
-
-// function App() {
-//   return (
-//     <Router>
-//       <Routes>
-//         <Route path="/" element={<AppLayout />}>
-//           {" "}
-//           {/* 全体のレイアウト（親コンポーネント） */}
-//           <Route index element={<Home />} />
-//           <Route path="*" element={<NoMatch />} />
-//         </Route>
-//       </Routes>
-//     </Router>
-//   );
-// }
-
-// export default App;
