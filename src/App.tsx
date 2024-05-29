@@ -223,6 +223,7 @@ const App: React.FC = () => {
             setCurrentMonth={setCurrentMonth}
             onSaveTransaction={handleSaveTransaction}
             onDeleteTransaction={handleDeleteTransaction}
+
             // onUpdateTransaction={handleUpdateTransaction}
           />
           {/* <TransactionTable /> */}

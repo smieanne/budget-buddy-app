@@ -17,13 +17,20 @@ import {
   MenuItem,
   IconButton,
 } from "@mui/material";
+import { useForm, Controller, SubmitHandler } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { formatCurrency } from "../utils/formatting";
 import { financeCalculations } from "../utils/financeCalculations";
 import { green, red, grey } from "@mui/material/colors";
 import { Transaction } from "../types";
 import CloseIcon from "@mui/icons-material/Close";
 import { format } from "date-fns";
-import { expenseCategories, incomeCategories } from "../validations/schema"; // validationsファイルからインポート
+import {
+  expenseCategories,
+  incomeCategories,
+  transactionSchema,
+  Schema,
+} from "../validations/schema"; // validationsファイルからインポート
 
 interface TransactionTableProps {
   monthlyTransactions: Transaction[];
@@ -48,7 +55,8 @@ const columns: Column[] = [
     label: "金額",
     minWidth: 170,
     align: "left",
-    format: (value: number) => value.toLocaleString("en-US"),
+    format: (value: number) =>
+      value.toLocaleString("ja-JP", { style: "currency", currency: "JPY" }),
   },
   { id: "content", label: "内容", minWidth: 170, align: "left" },
 ];
@@ -125,25 +133,44 @@ export default function TransactionTable({
 
   const handleClose = () => setOpen(false);
 
-  const handleSave = async () => {
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors },
+    setValue,
+  } = useForm<Schema>({
+    resolver: zodResolver(transactionSchema),
+    defaultValues: editTransaction || {
+      type: "expense",
+      date: "",
+      amount: 0,
+      category: "",
+      content: "",
+    },
+  });
+
+  React.useEffect(() => {
     if (editTransaction) {
-      const updatedTransaction: Transaction = {
-        ...editTransaction,
-        amount: Number(editTransaction.amount), // Ensure amount is a number
-        type: transactionType, // タイプの変更を反映
-      };
-      // Delete the old transaction
-      await onDeleteTransaction(editTransaction.id);
-      // Save the updated transaction
-      await onSaveTransaction(updatedTransaction);
-      // Update the state
-      setMonthlyTransactions((prev) =>
-        prev.map((t) =>
-          t.id === updatedTransaction.id ? updatedTransaction : t
-        )
-      );
-      handleClose();
+      reset(editTransaction);
     }
+  }, [editTransaction, reset]);
+
+  const onSubmit: SubmitHandler<Schema> = async (data) => {
+    const updatedTransaction: Transaction = {
+      ...editTransaction,
+      ...data,
+      type: transactionType, // Ensure the type is correctly updated
+      amount: Number(data.amount), // Ensure amount is a number
+    } as Transaction;
+
+    await onDeleteTransaction(editTransaction!.id);
+    await onSaveTransaction(updatedTransaction);
+
+    setMonthlyTransactions((prev) =>
+      prev.map((t) => (t.id === updatedTransaction.id ? updatedTransaction : t))
+    );
+    handleClose();
   };
 
   const handleDelete = async () => {
@@ -156,14 +183,9 @@ export default function TransactionTable({
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (editTransaction) {
-      const { name, value } = e.target;
-      setEditTransaction({
-        ...editTransaction,
-        [name]: name === "amount" ? Number(value) : value,
-      });
-    }
+  const handleTransactionTypeChange = (type: "expense" | "income") => {
+    setTransactionType(type);
+    setValue("category", ""); // カテゴリをリセットしてバリデーションをトリガー
   };
 
   const { income, expense, balance } = financeCalculations(monthlyTransactions);
@@ -282,7 +304,7 @@ export default function TransactionTable({
                   transactionType === "expense" ? "contained" : "outlined"
                 }
                 color="error"
-                onClick={() => setTransactionType("expense")}
+                onClick={() => handleTransactionTypeChange("expense")}
                 fullWidth
               >
                 支出
@@ -292,71 +314,97 @@ export default function TransactionTable({
                   transactionType === "income" ? "contained" : "outlined"
                 }
                 color="primary"
-                onClick={() => setTransactionType("income")}
+                onClick={() => handleTransactionTypeChange("income")}
                 fullWidth
               >
                 収入
               </Button>
             </ButtonGroup>
           </Box>
-          <TextField
-            label="日付"
-            type="date"
-            name="date"
-            value={
-              editTransaction
-                ? format(new Date(editTransaction.date), "yyyy-MM-dd")
-                : ""
-            }
-            onChange={handleInputChange}
-            fullWidth
-            margin="normal"
-          />
-          <TextField
-            label="カテゴリ"
-            name="category"
-            value={editTransaction ? editTransaction.category : ""}
-            onChange={handleInputChange}
-            fullWidth
-            margin="normal"
-            select
-          >
-            {currentCategories.map((category) => (
-              <MenuItem key={category} value={category}>
-                {category}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            label="金額"
-            name="amount"
-            value={editTransaction ? editTransaction.amount : ""}
-            onChange={handleInputChange}
-            fullWidth
-            margin="normal"
-            type="number"
-          />
-          <TextField
-            label="内容"
-            name="content"
-            value={editTransaction ? editTransaction.content : ""}
-            onChange={handleInputChange}
-            fullWidth
-            margin="normal"
-          />
-          <Button
-            onClick={handleSave}
-            variant="contained"
-            sx={{
-              mt: 2,
-              bgcolor: "green",
-              "&:hover": { bgcolor: "darkgreen" },
-            }}
-            fullWidth
-          >
-            更新
-          </Button>
-
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <Controller
+              name="date"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="日付"
+                  type="date"
+                  fullWidth
+                  margin="normal"
+                  error={!!errors.date}
+                  helperText={errors.date?.message}
+                />
+              )}
+            />
+            <Controller
+              name="category"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="カテゴリ"
+                  select
+                  fullWidth
+                  margin="normal"
+                  error={!!errors.category}
+                  helperText={errors.category?.message}
+                >
+                  {currentCategories.map((category) => (
+                    <MenuItem key={category} value={category}>
+                      {category}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+            <Controller
+              name="amount"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="金額"
+                  type="number"
+                  fullWidth
+                  margin="normal"
+                  error={!!errors.amount}
+                  helperText={errors.amount?.message}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const numberValue = value === "" ? "" : Number(value);
+                    field.onChange(numberValue);
+                  }}
+                />
+              )}
+            />
+            <Controller
+              name="content"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="内容"
+                  fullWidth
+                  margin="normal"
+                  error={!!errors.content}
+                  helperText={errors.content?.message}
+                />
+              )}
+            />
+            <Button
+              type="submit"
+              variant="contained"
+              sx={{
+                mt: 2,
+                bgcolor: "green",
+                "&:hover": { bgcolor: "darkgreen" },
+              }}
+              fullWidth
+            >
+              更新
+            </Button>
+          </form>
           <Button
             onClick={handleDelete}
             variant="outlined"
