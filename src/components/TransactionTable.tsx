@@ -47,6 +47,9 @@ import CheckroomIcon from "@mui/icons-material/Checkroom";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import PaidIcon from "@mui/icons-material/Paid";
 import SavingsIcon from "@mui/icons-material/Savings";
+import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
+import OutputIcon from "@mui/icons-material/Output";
+import InputIcon from "@mui/icons-material/Input";
 
 interface TransactionTableProps {
   monthlyTransactions: Transaction[];
@@ -190,7 +193,10 @@ export default function TransactionTable({
     setOpen(true);
   };
 
-  const handleClose = () => setOpen(false);
+  const handleClose = () => {
+    reset(); // フォームの値をリセット
+    setOpen(false);
+  };
 
   const {
     control,
@@ -266,25 +272,34 @@ export default function TransactionTable({
           <TableHead>
             <TableRow>
               <TableCell align="center" colSpan={1}>
+                {/* <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <InputIcon sx={{ mr: 1 }} /> */}
                 <FinancialItem
                   title={"収入"}
                   value={income}
                   color={green[800]}
                 />
+                {/* </Box> */}
               </TableCell>
               <TableCell align="center" colSpan={2}>
+                {/* <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <OutputIcon sx={{ mr: 1 }} /> */}
                 <FinancialItem
                   title={"支出"}
                   value={expense}
                   color={red[800]}
                 />
+                {/* </Box> */}
               </TableCell>
               <TableCell align="center" colSpan={2}>
+                {/* <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <AccountBalanceIcon sx={{ mr: 1 }} /> */}
                 <FinancialItem
                   title={"残高"}
                   value={balance}
                   color={grey[900]}
                 />
+                {/* </Box> */}
               </TableCell>
             </TableRow>
             <TableRow>
@@ -323,7 +338,7 @@ export default function TransactionTable({
                         sx={{
                           color:
                             transaction.type === "expense"
-                              ? red[700]
+                              ? grey[900]
                               : green[700],
                         }}
                       >
@@ -359,8 +374,8 @@ export default function TransactionTable({
       <Modal
         open={open}
         onClose={handleClose}
-        aria-labelledby="modal-title"
-        aria-describedby="modal-description"
+        // aria-labelledby="modal-title"
+        // aria-describedby="modal-description"
       >
         <Box sx={style}>
           <Box
