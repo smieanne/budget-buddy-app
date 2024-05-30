@@ -26,7 +26,6 @@ import { Schema } from "./validations/schema";
 const App: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
-  //FireStoreのエラーかどうかを判定する型ガード
   function isFireStoreError(
     err: unknown
   ): err is { code: string; message: string } {
@@ -46,59 +45,21 @@ const App: React.FC = () => {
     setIsModalOpen(false);
   };
 
-  const [taransactions, setTransactions] = useState<Transaction[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const today = format(currentMonth, "yyyy-MM");
-  //日付のフォーマット
-
   const [currentDay, setCurrentDay] = useState(today);
 
-  useEffect(() => {
-    const fetchTransactions = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(db, "Transactions"));
-        // console.log(querySnapshot);
-
-        const transactionsData = querySnapshot.docs.map((doc) => {
-          // console.log(doc.id, " => ", doc.data());
-          return {
-            ...doc.data(),
-            id: doc.id,
-          } as Transaction;
-        });
-
-        // console.log(transactionsData);
-        setTransactions(transactionsData);
-      } catch (err) {
-        if (isFireStoreError(err)) {
-          console.log("FireStoreのエラーは:", err);
-          console.log(err.message);
-          console.log(err.code);
-        } else {
-          console.log("一般的なエラーは:", err);
-        }
-      }
-    };
-    fetchTransactions();
-  }, []);
-
-  //ひと月分のデータのみ取得
-  const monthlyTransactions = taransactions.filter((transaction) => {
-    return transaction.date.startsWith(formatMonth(currentMonth));
-  });
-
-  //取引を保存する処理
-  const handleSaveTransaction = async (transaction: Schema) => {
+  const fetchTransactions = async () => {
     try {
-      //firestoreにデータを保存
-      const docRef = await addDoc(collection(db, "Transactions"), transaction);
-
-      const newTransaction = {
-        id: docRef.id,
-        ...transaction,
-      } as Transaction;
-      console.log(newTransaction);
-      setTransactions([...taransactions, newTransaction]);
+      const querySnapshot = await getDocs(collection(db, "Transactions"));
+      const transactionsData = querySnapshot.docs.map((doc) => {
+        return {
+          ...doc.data(),
+          id: doc.id,
+        } as Transaction;
+      });
+      setTransactions(transactionsData);
     } catch (err) {
       if (isFireStoreError(err)) {
         console.log("FireStoreのエラーは:", err);
@@ -110,7 +71,34 @@ const App: React.FC = () => {
     }
   };
 
-  //削除処理
+  useEffect(() => {
+    fetchTransactions();
+  }, []);
+
+  const monthlyTransactions = transactions.filter((transaction) => {
+    return transaction.date.startsWith(formatMonth(currentMonth));
+  });
+
+  const handleSaveTransaction = async (transaction: Schema) => {
+    try {
+      const docRef = await addDoc(collection(db, "Transactions"), transaction);
+      const newTransaction = {
+        id: docRef.id,
+        ...transaction,
+      } as Transaction;
+      setTransactions([...transactions, newTransaction]);
+      await fetchTransactions(); // Fetch the updated transactions
+    } catch (err) {
+      if (isFireStoreError(err)) {
+        console.log("FireStoreのエラーは:", err);
+        console.log(err.message);
+        console.log(err.code);
+      } else {
+        console.log("一般的なエラーは:", err);
+      }
+    }
+  };
+
   const handleDeleteTransaction = async (
     transactionIds: string | readonly string[]
   ) => {
@@ -118,16 +106,10 @@ const App: React.FC = () => {
       const idsToDelete = Array.isArray(transactionIds)
         ? transactionIds
         : [transactionIds];
-
       for (const id of idsToDelete) {
-        //firestoreのデータ削除
         await deleteDoc(doc(db, "Transactions", id));
       }
-      //複数の取引を削除可能
-      // const filterdTransactions = transactionSchema.filter(
-      //   (Transaction) => !idsToDelete.includes(Transaction.id)
-      // );
-      // setTransactions(filterdTransactions);
+      await fetchTransactions(); // Fetch the updated transactions
     } catch (err) {
       if (isFireStoreError(err)) {
         console.error("firestoreのエラーは：", err);
@@ -137,21 +119,27 @@ const App: React.FC = () => {
     }
   };
 
-  //更新処理
-  const dateTransaction = async (
+  const updateTransaction = async (
     transaction: Schema,
     transactionId: string
   ) => {
     try {
-      //firestore更新処理
       const docRef = doc(db, "Transactions", transactionId);
-
       await updateDoc(docRef, transaction);
-      //フロント更新
-      const updateTransactions = taransactions.map((t) =>
-        t.id === transactionId ? { ...t, ...transaction } : t
-      ) as Transaction[];
-      setTransactions(updateTransactions);
+
+      const updatedTransaction = {
+        ...transaction,
+        id: transactionId,
+      } as Transaction;
+
+      setTransactions((prevTransactions) =>
+        prevTransactions.map((t) =>
+          t.id === transactionId ? updatedTransaction : t
+        )
+      );
+
+      // Fetch the updated transactions to ensure consistency
+      await fetchTransactions();
     } catch (err) {
       if (isFireStoreError(err)) {
         console.error("firestoreのエラーは：", err);
@@ -159,20 +147,6 @@ const App: React.FC = () => {
         console.error("一般的なエラーは:", err);
       }
     }
-  };
-
-  // console.log(monthlyTransactions);
-
-  //追加
-  const onSaveTransaction = async (
-    transaction: Schema
-  ): Promise<Transaction> => {
-    const docRef = await addDoc(collection(db, "Transactions"), transaction);
-    const newTransactionDoc = await getDoc(docRef);
-    return {
-      id: newTransactionDoc.id,
-      ...newTransactionDoc.data(),
-    } as Transaction;
   };
 
   return (
@@ -181,7 +155,7 @@ const App: React.FC = () => {
       <Box
         sx={{
           display: { md: "flex" },
-          bgcolor: "#fffdf1", //#fbf9e1　　黄色#FFF8DC
+          bgcolor: "#fffdf1",
           minHeight: "100vh",
         }}
       >
@@ -190,10 +164,8 @@ const App: React.FC = () => {
           <AddTransactionModal
             open={isModalOpen}
             onClose={closeModal}
-            // currentDay={currentDay}
             onSaveTransaction={handleSaveTransaction}
           />
-
           <Grid item xs={4}>
             <MonthSelector
               currentMonth={currentMonth}
@@ -201,32 +173,28 @@ const App: React.FC = () => {
               onSaveTransaction={handleSaveTransaction}
             />
           </Grid>
-
           <Button
             variant="contained"
             size="large"
             startIcon={<AddCircleOutlineIcon />}
             sx={{
-              // backgroundColor: "#213356",
               backgroundColor: "#FFD700",
               color: "#000",
-              "&amp;:hover": { backgroundColor: "#FFD700" },
+              "&:hover": { backgroundColor: "#FFD700" },
               mb: 1,
             }}
             onClick={openModal}
           >
             新規登録
           </Button>
-
           <TransactionTable
             monthlyTransactions={monthlyTransactions}
             setCurrentMonth={setCurrentMonth}
             onSaveTransaction={handleSaveTransaction}
             onDeleteTransaction={handleDeleteTransaction}
-
-            // onUpdateTransaction={handleUpdateTransaction}
+            // fetchTransactions={fetchTransactions}
+            updateTransaction={updateTransaction}
           />
-          {/* <TransactionTable /> */}
         </Container>
       </Box>
     </div>

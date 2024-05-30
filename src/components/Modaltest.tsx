@@ -1,4 +1,4 @@
-import * as React from "react";
+import React from "react";
 import Paper from "@mui/material/Paper";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -32,31 +32,13 @@ import {
   Schema,
 } from "../validations/schema"; // validationsファイルからインポート
 import DeleteIcon from "@mui/icons-material/Delete";
-import SportsTennisIcon from "@mui/icons-material/SportsTennis";
-import TrainIcon from "@mui/icons-material/Train";
-import OtherHousesIcon from "@mui/icons-material/OtherHouses";
-import RssFeedIcon from "@mui/icons-material/RssFeed";
-import TipsAndUpdatesIcon from "@mui/icons-material/TipsAndUpdates";
-import SubscriptionsIcon from "@mui/icons-material/Subscriptions";
-import RestaurantIcon from "@mui/icons-material/Restaurant";
-import LocalGroceryStoreIcon from "@mui/icons-material/LocalGroceryStore";
-import LocalCafeIcon from "@mui/icons-material/LocalCafe";
-import VaccinesIcon from "@mui/icons-material/Vaccines";
-import FaceRetouchingNaturalIcon from "@mui/icons-material/FaceRetouchingNatural";
-import CheckroomIcon from "@mui/icons-material/Checkroom";
-import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-import PaidIcon from "@mui/icons-material/Paid";
-import SavingsIcon from "@mui/icons-material/Savings";
 
 interface TransactionTableProps {
   monthlyTransactions: Transaction[];
   setCurrentMonth: React.Dispatch<React.SetStateAction<Date>>;
-  onSaveTransaction: (transaction: Schema) => Promise<void>;
+  onSaveTransaction: (transaction: Transaction) => Promise<void>;
   onDeleteTransaction: (id: string) => Promise<void>;
-  updateTransaction: (
-    transaction: Schema,
-    transactionId: string
-  ) => Promise<void>;
+  fetchTransactions: () => void;
 }
 
 interface Column {
@@ -117,53 +99,13 @@ const style = {
   p: 4,
 };
 
-const getCategoryIcon = (category: string) => {
-  switch (category) {
-    case "家賃":
-      return <OtherHousesIcon />;
-    case "光熱費":
-      return <TipsAndUpdatesIcon />;
-    case "通信費":
-      return <RssFeedIcon />;
-    case "サブスク":
-      return <SubscriptionsIcon />;
-    case "食費":
-      return <RestaurantIcon />;
-    case "日用品費":
-      return <LocalGroceryStoreIcon />;
-    case "交通費":
-      return <TrainIcon />;
-    case "交際費":
-      return <LocalCafeIcon />;
-    case "医療費":
-      return <VaccinesIcon />;
-    case "美容":
-      return <FaceRetouchingNaturalIcon />;
-    case "娯楽":
-      return <SportsTennisIcon />;
-    case "被服費":
-      return <CheckroomIcon />;
-    case "その他":
-      return <AddCircleOutlineIcon />;
-    case "給与":
-      return <PaidIcon />;
-    case "副収入":
-      return <SavingsIcon />;
-    // 他のカテゴリも同様に追加
-    default:
-      return null;
-  }
-};
-
 export default function TransactionTable({
   monthlyTransactions,
   setCurrentMonth,
   onSaveTransaction,
   onDeleteTransaction,
-  updateTransaction,
+  fetchTransactions,
 }: TransactionTableProps) {
-  const [MonthlyTransactions, setMonthlyTransactions] =
-    React.useState<Transaction[]>(monthlyTransactions);
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
   const [open, setOpen] = React.useState(false);
@@ -216,31 +158,24 @@ export default function TransactionTable({
   }, [editTransaction, reset]);
 
   const onSubmit: SubmitHandler<Schema> = async (data) => {
-    if (editTransaction) {
-      const updatedTransaction: Transaction = {
-        ...editTransaction,
-        ...data,
-        type: transactionType,
-        amount: Number(data.amount),
-      } as Transaction;
+    const updatedTransaction: Transaction = {
+      ...editTransaction,
+      ...data,
+      type: transactionType, // Ensure the type is correctly updated
+      amount: Number(data.amount), // Ensure amount is a number
+    } as Transaction;
 
-      await updateTransaction(updatedTransaction, editTransaction.id);
+    await onDeleteTransaction(editTransaction!.id);
+    await onSaveTransaction(updatedTransaction);
 
-      setMonthlyTransactions((prev) =>
-        prev.map((t) =>
-          t.id === updatedTransaction.id ? updatedTransaction : t
-        )
-      );
-      handleClose();
-    }
+    fetchTransactions();
+    handleClose();
   };
 
   const handleDelete = async () => {
     if (editTransaction) {
       await onDeleteTransaction(editTransaction.id);
-      setMonthlyTransactions((prev) =>
-        prev.filter((t) => t.id !== editTransaction.id)
-      );
+      fetchTransactions();
       handleClose();
     }
   };
@@ -252,6 +187,7 @@ export default function TransactionTable({
 
   const { income, expense, balance } = financeCalculations(monthlyTransactions);
 
+  // Sort transactions by date in descending order (newest first)
   const sortedTransactions = [...monthlyTransactions].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
@@ -327,18 +263,9 @@ export default function TransactionTable({
                               : green[700],
                         }}
                       >
-                        {column.id === "category" ? (
-                          <Box sx={{ display: "flex", alignItems: "center" }}>
-                            {getCategoryIcon(transaction.category)}
-                            <Typography sx={{ ml: 1 }}>
-                              {transaction.category}
-                            </Typography>
-                          </Box>
-                        ) : column.format && typeof value === "number" ? (
-                          column.format(value)
-                        ) : (
-                          value
-                        )}
+                        {column.format && typeof value === "number"
+                          ? column.format(value)
+                          : value}
                       </TableCell>
                     );
                   })}
@@ -392,7 +319,7 @@ export default function TransactionTable({
                 variant={
                   transactionType === "income" ? "contained" : "outlined"
                 }
-                color="success"
+                color="primary"
                 onClick={() => handleTransactionTypeChange("income")}
                 fullWidth
               >
@@ -431,10 +358,7 @@ export default function TransactionTable({
                 >
                   {currentCategories.map((category) => (
                     <MenuItem key={category} value={category}>
-                      <Box sx={{ display: "flex", alignItems: "center" }}>
-                        {getCategoryIcon(category)}
-                        <Typography sx={{ ml: 1 }}>{category}</Typography>
-                      </Box>
+                      {category}
                     </MenuItem>
                   ))}
                 </TextField>
@@ -474,7 +398,16 @@ export default function TransactionTable({
                 />
               )}
             />
-            <Button type="submit" variant="contained" color="primary" fullWidth>
+            <Button
+              type="submit"
+              variant="contained"
+              sx={{
+                mt: 2,
+                bgcolor: "green",
+                "&:hover": { bgcolor: "darkgreen" },
+              }}
+              fullWidth
+            >
               更新
             </Button>
           </form>

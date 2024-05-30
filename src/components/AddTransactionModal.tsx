@@ -20,6 +20,21 @@ import { ExpenseCategory, IncomeCategory } from "../types";
 import FastfoodIcon from "@mui/icons-material/Fastfood";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Schema, transactionSchema } from "../validations/schema";
+import OtherHousesIcon from "@mui/icons-material/OtherHouses";
+import RssFeedIcon from "@mui/icons-material/RssFeed";
+import TipsAndUpdatesIcon from "@mui/icons-material/TipsAndUpdates";
+import SubscriptionsIcon from "@mui/icons-material/Subscriptions";
+import RestaurantIcon from "@mui/icons-material/Restaurant";
+import LocalGroceryStoreIcon from "@mui/icons-material/LocalGroceryStore";
+import TrainIcon from "@mui/icons-material/Train";
+import LocalCafeIcon from "@mui/icons-material/LocalCafe";
+import VaccinesIcon from "@mui/icons-material/Vaccines";
+import FaceRetouchingNaturalIcon from "@mui/icons-material/FaceRetouchingNatural";
+import CheckroomIcon from "@mui/icons-material/Checkroom";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import PaidIcon from "@mui/icons-material/Paid";
+import SavingsIcon from "@mui/icons-material/Savings";
+import SportsTennisIcon from "@mui/icons-material/SportsTennis";
 
 interface AddTransactionModalProps {
   open: boolean;
@@ -52,24 +67,25 @@ const AddExpenseModal: React.FC<AddTransactionModalProps> = ({
 
   // 支出用カテゴリ
   const expenseCategories: CategoryItem[] = [
-    { label: "家賃", icon: <FastfoodIcon fontSize="small" /> },
-    { label: "光熱費", icon: <FastfoodIcon fontSize="small" /> },
-    { label: "通信費", icon: <FastfoodIcon fontSize="small" /> },
-    { label: "サブスク", icon: <FastfoodIcon fontSize="small" /> },
-    { label: "食費", icon: <FastfoodIcon fontSize="small" /> },
-    { label: "日用品費", icon: <FastfoodIcon fontSize="small" /> },
-    { label: "交通費", icon: <FastfoodIcon fontSize="small" /> },
-    { label: "交際費", icon: <FastfoodIcon fontSize="small" /> },
-    { label: "医療費", icon: <FastfoodIcon fontSize="small" /> },
-    { label: "美容", icon: <FastfoodIcon fontSize="small" /> },
-    { label: "被服費", icon: <FastfoodIcon fontSize="small" /> },
-    { label: "その他", icon: <FastfoodIcon fontSize="small" /> },
+    { label: "家賃", icon: <OtherHousesIcon fontSize="small" /> },
+    { label: "光熱費", icon: <TipsAndUpdatesIcon fontSize="small" /> },
+    { label: "通信費", icon: <RssFeedIcon fontSize="small" /> },
+    { label: "サブスク", icon: <SubscriptionsIcon fontSize="small" /> },
+    { label: "食費", icon: <RestaurantIcon fontSize="small" /> },
+    { label: "日用品費", icon: <LocalGroceryStoreIcon fontSize="small" /> },
+    { label: "交通費", icon: <TrainIcon fontSize="small" /> },
+    { label: "交際費", icon: <LocalCafeIcon fontSize="small" /> },
+    { label: "医療費", icon: <VaccinesIcon fontSize="small" /> },
+    { label: "美容", icon: <FaceRetouchingNaturalIcon fontSize="small" /> },
+    { label: "娯楽", icon: <SportsTennisIcon fontSize="small" /> },
+    { label: "被服費", icon: <CheckroomIcon fontSize="small" /> },
+    { label: "その他", icon: <AddCircleOutlineIcon fontSize="small" /> },
   ];
   // 収入用カテゴリ
   const incomeCategories: CategoryItem[] = [
-    { label: "給与", icon: <FastfoodIcon fontSize="small" /> },
-    { label: "副収入", icon: <FastfoodIcon fontSize="small" /> },
-    { label: "その他", icon: <FastfoodIcon fontSize="small" /> },
+    { label: "給与", icon: <PaidIcon fontSize="small" /> },
+    { label: "副収入", icon: <SavingsIcon fontSize="small" /> },
+    { label: "その他", icon: <AddCircleOutlineIcon fontSize="small" /> },
   ];
 
   const [categories, setCategories] = useState(expenseCategories);
@@ -143,7 +159,7 @@ const AddExpenseModal: React.FC<AddTransactionModalProps> = ({
                 </Button>
                 <Button
                   onClick={() => incomeExpenseToggle("income")}
-                  color="primary"
+                  color="success"
                   variant={field.value === "income" ? "contained" : "outlined"}
                 >
                   収入
@@ -184,8 +200,12 @@ const AddExpenseModal: React.FC<AddTransactionModalProps> = ({
                 >
                   {categories.map((category, index) => (
                     <MenuItem value={category.label} key={index}>
-                      <ListItemIcon>{category.icon}</ListItemIcon>
-                      {category.label}
+                      <Box display="flex" alignItems="center">
+                        <ListItemIcon sx={{ minWidth: 0, marginRight: 1 }}>
+                          {category.icon}
+                        </ListItemIcon>
+                        {category.label}
+                      </Box>
                     </MenuItem>
                   ))}
                 </Select>
@@ -240,7 +260,7 @@ const AddExpenseModal: React.FC<AddTransactionModalProps> = ({
           />
           <Button
             variant="contained"
-            color={currentType === "income" ? "primary" : "error"}
+            color={currentType === "income" ? "success" : "error"}
             type="submit"
             fullWidth
           >
