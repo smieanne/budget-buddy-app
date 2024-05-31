@@ -16,12 +16,14 @@ import {
   TextField,
   MenuItem,
   IconButton,
+  Chip,
+  useMediaQuery, // 新しく追加
 } from "@mui/material";
 import { useForm, Controller, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { formatCurrency } from "../utils/formatting";
 import { financeCalculations } from "../utils/financeCalculations";
-import { green, red, grey } from "@mui/material/colors";
+import { green, red, grey, blue } from "@mui/material/colors";
 import { Transaction } from "../types";
 import CloseIcon from "@mui/icons-material/Close";
 import { format } from "date-fns";
@@ -71,17 +73,18 @@ interface Column {
 }
 
 const columns: Column[] = [
-  { id: "date", label: "日付", minWidth: 170 },
-  { id: "category", label: "カテゴリ", minWidth: 100 },
+  { id: "date", label: "日付", minWidth: 30 },
+  { id: "type", label: "収支", minWidth: 30 }, // 新しいカラムを追加
+  { id: "category", label: "カテゴリ", minWidth: 70 },
   {
     id: "amount",
     label: "金額",
-    minWidth: 170,
+    minWidth: 50,
     align: "left",
     format: (value: number) =>
       value.toLocaleString("ja-JP", { style: "currency", currency: "JPY" }),
   },
-  { id: "content", label: "内容", minWidth: 170, align: "left" },
+  { id: "content", label: "内容", minWidth: 100, align: "left" },
 ];
 
 function FinancialItem({
@@ -118,6 +121,10 @@ const style = {
   border: "2px solid #000",
   boxShadow: 24,
   p: 4,
+  "@media (max-width: 600px)": {
+    width: "80%",
+    p: 2,
+  },
 };
 
 const getCategoryIcon = (category: string) => {
@@ -265,41 +272,39 @@ export default function TransactionTable({
   const currentCategories =
     transactionType === "expense" ? expenseCategories : incomeCategories;
 
+  const isMobile = useMediaQuery("(max-width:600px)");
+
   return (
-    <Paper sx={{ width: "100%" }}>
+    <Paper
+      sx={{
+        width: "100%",
+        overflowX: "auto",
+      }}
+    >
       <TableContainer sx={{ maxHeight: 440 }}>
         <Table stickyHeader aria-label="sticky table">
           <TableHead>
             <TableRow>
-              <TableCell align="center" colSpan={1}>
-                {/* <Box sx={{ display: "flex", alignItems: "center" }}>
-                  <InputIcon sx={{ mr: 1 }} /> */}
+              <TableCell align="center" colSpan={2} sx={{ width: "33%" }}>
                 <FinancialItem
                   title={"収入"}
                   value={income}
-                  color={green[800]}
+                  color={blue[800]}
                 />
-                {/* </Box> */}
               </TableCell>
-              <TableCell align="center" colSpan={2}>
-                {/* <Box sx={{ display: "flex", alignItems: "center" }}>
-                  <OutputIcon sx={{ mr: 1 }} /> */}
+              <TableCell align="center" colSpan={2} sx={{ width: "33%" }}>
                 <FinancialItem
                   title={"支出"}
                   value={expense}
                   color={red[800]}
                 />
-                {/* </Box> */}
               </TableCell>
-              <TableCell align="center" colSpan={2}>
-                {/* <Box sx={{ display: "flex", alignItems: "center" }}>
-                  <AccountBalanceIcon sx={{ mr: 1 }} /> */}
+              <TableCell align="center" colSpan={2} sx={{ width: "33%" }}>
                 <FinancialItem
-                  title={"残高"}
+                  title={"収支"}
                   value={balance}
                   color={grey[900]}
                 />
-                {/* </Box> */}
               </TableCell>
             </TableRow>
             <TableRow>
@@ -318,6 +323,61 @@ export default function TransactionTable({
               ))}
             </TableRow>
           </TableHead>
+          {/* <TableBody>
+            {sortedTransactions
+              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+              .map((transaction) => (
+                <TableRow
+                  hover
+                  role="checkbox"
+                  tabIndex={-1}
+                  key={transaction.id}
+                  onClick={() => handleOpen(transaction)}
+                >
+                  {columns.map((column) => {
+                    const value = transaction[column.id];
+                    return (
+                      <TableCell
+                        key={column.id as string}
+                        align={column.align}
+                        sx={{
+                          color:
+                            transaction.type === "expense"
+                              ? grey[900]
+                              : grey[900],
+                        }}
+                      >
+                        {column.id === "category" ? (
+                          <Box sx={{ display: "flex", alignItems: "center" }}>
+                            {getCategoryIcon(transaction.category)}
+                            <Typography sx={{ ml: 1 }}>
+                              {transaction.category}
+                            </Typography>
+                          </Box>
+                        ) : column.id === "type" ? (
+                          <Chip
+                            label={
+                              transaction.type === "income" ? "収入" : "支出"
+                            }
+                            color={
+                              transaction.type === "income"
+                                ? "primary"
+                                : "error"
+                            }
+                            variant="outlined"
+                          />
+                        ) : column.format && typeof value === "number" ? (
+                          column.format(value)
+                        ) : (
+                          value
+                        )}
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              ))}
+          </TableBody> */}
+
           <TableBody>
             {sortedTransactions
               .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
@@ -339,16 +399,35 @@ export default function TransactionTable({
                           color:
                             transaction.type === "expense"
                               ? grey[900]
-                              : green[700],
+                              : grey[900],
+                          padding: isMobile ? "8px" : "8px", // ここで余白を調整
                         }}
                       >
-                        {column.id === "category" ? (
+                        {column.id === "date" ? (
+                          <Typography>
+                            {isMobile
+                              ? format(new Date(value as string), "M/d")
+                              : format(new Date(value as string), "yyyy-MM-dd")}
+                          </Typography>
+                        ) : column.id === "category" ? (
                           <Box sx={{ display: "flex", alignItems: "center" }}>
                             {getCategoryIcon(transaction.category)}
                             <Typography sx={{ ml: 1 }}>
                               {transaction.category}
                             </Typography>
                           </Box>
+                        ) : column.id === "type" ? (
+                          <Chip
+                            label={
+                              transaction.type === "income" ? "収入" : "支出"
+                            }
+                            color={
+                              transaction.type === "income"
+                                ? "primary"
+                                : "error"
+                            }
+                            variant="outlined"
+                          />
                         ) : column.format && typeof value === "number" ? (
                           column.format(value)
                         ) : (
@@ -370,7 +449,12 @@ export default function TransactionTable({
         page={page}
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
+        labelRowsPerPage="表示件数"
+        labelDisplayedRows={({ from, to, count }) =>
+          ` 全${count !== -1 ? count : ` ${to}`}中  ${from}-${to}件 `
+        }
       />
+
       <Modal
         open={open}
         onClose={handleClose}
@@ -407,7 +491,7 @@ export default function TransactionTable({
                 variant={
                   transactionType === "income" ? "contained" : "outlined"
                 }
-                color="success"
+                color="primary"
                 onClick={() => handleTransactionTypeChange("income")}
                 fullWidth
               >
@@ -489,7 +573,7 @@ export default function TransactionTable({
                 />
               )}
             />
-            <Button type="submit" variant="contained" color="primary" fullWidth>
+            <Button type="submit" variant="contained" color="success" fullWidth>
               更新
             </Button>
           </form>

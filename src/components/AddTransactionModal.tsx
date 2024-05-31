@@ -159,7 +159,7 @@ const AddExpenseModal: React.FC<AddTransactionModalProps> = ({
                 </Button>
                 <Button
                   onClick={() => incomeExpenseToggle("income")}
-                  color="success"
+                  color="primary"
                   variant={field.value === "income" ? "contained" : "outlined"}
                 >
                   収入
@@ -232,14 +232,6 @@ const AddExpenseModal: React.FC<AddTransactionModalProps> = ({
                   const newValue = parseInt(e.target.value, 10) || 0;
                   field.onChange(newValue);
                 }}
-                // label="金額"
-                // type="number"
-
-                // onChange={(e) => {
-                //   const value = e.target.value;
-                //   const numberValue = value === "0" ? "" : Number(value);
-                //   field.onChange(numberValue);
-                // }}
               />
             )}
           />
@@ -260,7 +252,7 @@ const AddExpenseModal: React.FC<AddTransactionModalProps> = ({
           />
           <Button
             variant="contained"
-            color={currentType === "income" ? "success" : "error"}
+            color={currentType === "income" ? "primary" : "error"}
             type="submit"
             fullWidth
           >
@@ -273,14 +265,19 @@ const AddExpenseModal: React.FC<AddTransactionModalProps> = ({
 };
 
 const modalStyle = {
-  position: "absolute",
+  position: "absolute" as "absolute",
   top: "50%",
   left: "50%",
   transform: "translate(-50%, -50%)",
   width: 400,
   bgcolor: "background.paper",
+  border: "2px solid #000",
   boxShadow: 24,
   p: 4,
+  "@media (max-width: 600px)": {
+    width: "80%",
+    p: 2,
+  },
 };
 
 export default AddExpenseModal;
